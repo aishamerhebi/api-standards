@@ -1022,7 +1022,15 @@ components:
                       - idtype-value
                       - expression
                       - predicate
-                    example: idtype-value
+                    example: expression
+                  response_entity:
+                    type: enum
+                    description: |
+                      Define the type of response to have when executing the search
+                    enum:
+                      - Household
+                      - Family
+                      - Member
                   query:
                     description: |
                       1. Implementing systems can define schemas.
