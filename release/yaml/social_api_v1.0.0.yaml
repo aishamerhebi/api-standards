@@ -1008,11 +1008,13 @@ components:
 
                       1 : Register <br>
                       2 : Payment <br>
-                      3 : Deregister <br>  
+                      3 : Deregister <br> 
+                      4 : spdci:common:RegistryEventType:NewHouseHoldMember
                     enum:
                       - REGISTER
                       - PAYMENT
                       - DEREGISTER
+                      - NewHouseHoldMember
                   query_type:
                     type: string
                     description: |
@@ -1024,13 +1026,7 @@ components:
                       - predicate
                     example: expression
                   response_entity:
-                    type: enum
-                    description: |
-                      Define the type of response to have when executing the search
-                    enum:
-                      - Household
-                      - Family
-                      - Member
+                    $ref: '#/components/schemas/NotifyEventRequest/properties/notify_event/items/properties/data/properties/response_entity'
                   query:
                     description: |
                       1. Implementing systems can define schemas.
@@ -1047,12 +1043,12 @@ components:
                             type: string
                             description: |
                               @context: https://schema.spdci.org/common/v1/QueryTypeEnum.jsonld <br>
-                              @type: "Queryype" <br>
+                              @type: "QueryType" <br>
 
                               **Notes:**
                                 1. Query types that helps decode query expressions
                                 2. Sample query type enums: "GraphQl", "Sql", "NoSql"
-                            example: 'ns:org:QueryType:GraphQl'
+                            example: 'ns:org:QueryType:NoSql'
                           value:
                             type: object
                             description: |
@@ -1063,7 +1059,16 @@ components:
                                 1. Query expression's syntax / format is determined based on query-type.
                                 2. Query expression as a template with placeholder to pass conditional search parameters
                             example:
-                              expression: ' query GeBirthRecordById: { person: (UIN: "1") { BRN, name, gender, birthDate, birthPlace, parents } }'
+                              expression:
+                                collection: HouseHold
+                                query:
+                                  $and:
+                                    - poverty_score:
+                                        $lt: 5
+                                    - location:
+                                        $eq: central_region
+                                    - household_size:
+                                        $lt: 5
                       - type: object
                         description: Identifier type and value object
                         properties:
@@ -1417,8 +1422,8 @@ components:
                       **Notes:**
                         1. Registry type values defined as per implementation context.
                         2. Usually a list of **enum** values of all possible queryable functional registries 
-                        3. example: "ns:org:RegistryType:IBR"
-                    example: 'ns:org:RegistryType:IBR'
+                        3. example: "ns:org:RegistryType:Social"
+                    example: 'ns:org:RegistryType:Social'
                   reg_event_type:
                     $ref: '#/components/schemas/SearchRequest/properties/search_request/items/properties/search_criteria/properties/reg_event_type'
                   frequency:
@@ -1445,18 +1450,17 @@ components:
                     $ref: '#/components/schemas/SearchRequest/properties/search_request/items/properties/search_criteria/properties/query_type'
                   filter:
                     $ref: '#/components/schemas/SearchRequest/properties/search_request/items/properties/search_criteria/properties/query'
-                  notify_record_type:
-                    type: string
-                    description: |
-                      @context: https://schema.spdci.org/extensions/social/v1/Person.jsonld <br>
-                      @type: "RegistryRecordType" <br>
-
-                      **Notes:**
-                        1. Registry record type values defined as per implementation context.
-                        2. Usually a list of **enum** values of all possible queryable result sets 
-                        3. Referenced in search_request and notify events
-                        4. example: "Person" 
-                    example: Person
+                  response_entity:
+                    $ref: '#/components/schemas/NotifyEventRequest/properties/notify_event/items/properties/data/properties/response_entity'
+                  response_fields:
+                    type: array
+                    items:
+                      type: string
+                      description: Field from the response entity
+                    examples:
+                      - Household.household_size
+                      - Household.member_list
+                    description: Array of fields from the response entity
                   authorize:
                     $ref: '#/components/schemas/SearchRequest/properties/search_request/items/properties/search_criteria/properties/authorize'
                 required:
@@ -1522,11 +1526,21 @@ components:
                     filter:
                       $ref: '#/components/schemas/SearchRequest/properties/search_request/items/properties/search_criteria/properties/query'
                     notify_record_type:
-                      $ref: '#/components/schemas/NotifyEventRequest/properties/notify_event/items/properties/data/properties/reg_record_type'
                       required:
                         - reg_event_type
                         - filter
                         - notify_record_type
+                      type: string
+                      description: |
+                        @context: https://schema.spdci.org/common/v1/RegistryRecordType.jsonld <br>
+                        @type: "RegistryRecordType" <br>
+
+                        **Notes:**
+                          1. Registry record type values defined as per implementation context.
+                          2. Usually a list of **enum** values of all possible queryable result sets 
+                          3. Referenced in search_request and notify events
+                          4. example: "spdci-extensions-dci:Person" 
+                      example: 'spdci-extensions-dci:Person'
                     locale:
                       $ref: '#/components/schemas/TxnStatusRequest/properties/txnstatus_request/properties/locale'
                   required:
@@ -1803,8 +1817,8 @@ components:
                       **Notes:**
                         1. Registry type values defined as per implementation context.
                         2. Usually a list of **enum** values of all possible queryable functional registries 
-                        3. example: "ns:org:RegistryType:Civil"
-                    example: 'ns:org:RegistryType:Civil'
+                        3. example: "ns:org:RegistryType:Social"
+                    example: 'ns:org:RegistryType:Social'
                   reg_event_type:
                     type: string
                     description: |
@@ -1814,102 +1828,27 @@ components:
                       **Notes:**
                         1. Registry event type values defined as per implementation context.
                         2. Usually a list of **enum** values of all possible queryable identifiers.
-                        3. example: "spdci-common:RegistryEventType:LiveBirth"
-                    example: 'spdci-common:RegistryEventType:LiveBirth'
-                  reg_record_type:
-                    type: string
+                        3. example: "spdci-common:RegistryEventType:NewHouseHoldMember"
+                    example: 'spdci-common:RegistryEventType:NewHouseHoldMember'
+                  response_entity:
+                    type: enum
                     description: |
-                      @context: https://schema.spdci.org/common/v1/RegistryRecordType.jsonld <br>
-                      @type: "RegistryRecordType" <br>
-
-                      **Notes:**
-                        1. Registry record type values defined as per implementation context.
-                        2. Usually a list of **enum** values of all possible queryable result sets 
-                        3. Referenced in search_request and notify events
-                        4. example: "spdci-extensions-dci:Person" 
-                    example: 'spdci-extensions-dci:Person'
+                      Define the type of response to have when executing the search
+                    enum:
+                      - Household
+                      - Family
+                      - Member
                   reg_records:
                     type: object
                     description: |
-                      The "Person" object contains fields expected in response of search
+                      The "Household" object contains fields expected in response of search
                       @context: https://schema.spdci.org/extensions/dci/v1/Person.jsonld <br>
-                      @type: "Person" <br>
+                      @type: "Household" <br>
                       @container: "@set" <br> 
                     example:
-                      type: object
-                      description: |
-                        @context: https://schema.spdci.org/CRVSPerson" <br>
-                        @type: "Consent"
-                      example:
-                        '@context': 'https://standards.spdci.org/schemas/extensions/dci/v1/Person'
-                        '@type': CRVSPerson
-                        '@vocab': 'https://spdci.org/'
-                        schema: 'http://schema.org/'
-                        rdfs: 'http://www.w3.org/2000/01/rdf-schema#'
-                        xsd: 'http://www.w3.org/2001/XMLSchema#'
-                        CRVSPerson:
-                          '@id': 'https://spdci.org/schemas/extensions/dci/v1/Person'
-                          '@type': 'rdfs:Class'
-                          '@context':
-                            name:
-                              '@id': 'schema:name'
-                              '@type': 'xsd:string'
-                            givenName:
-                              '@id': 'schema:givenName'
-                              '@type': 'xsd:string'
-                            familyName:
-                              '@id': 'schema:familyName'
-                              '@type': 'xsd:string'
-                            additionalName:
-                              '@id': 'schema:additionalName'
-                              '@type': 'xsd:string'
-                            gender:
-                              '@id': 'schema:gender'
-                              '@type': 'xsd:string'
-                            birthDate:
-                              '@id': 'schema:birthDate'
-                              '@type': 'xsd:date'
-                            birthPlace:
-                              '@id': 'schema:birthPlace'
-                              '@type': 'schema:GeoCoordinates'
-                            deathDate:
-                              '@id': 'schema:deathDate'
-                              '@type': 'xsd:date'
-                            deathPlace:
-                              '@id': 'schema:deathPlace'
-                              '@type': 'schema:GeoCoordinates'
-                            maritalStatus:
-                              '@id': 'schema:maritalStatus'
-                              '@type': 'xsd:string'
-                            honorificPrefix:
-                              '@id': 'schema:honorificPrefix'
-                              '@type': 'xsd:string'
-                            honorificSuffix:
-                              '@id': 'schema:honorificSuffix'
-                              '@type': 'xsd:string'
-                            emails:
-                              '@container': '@set'
-                              '@id': 'schema:email'
-                              '@type': 'xsd:string'
-                            telephones:
-                              '@container': '@set'
-                              '@id': 'schema:telephone'
-                              '@type': 'xsd:string'
-                            address:
-                              '@id': 'schema:address'
-                              '@type': 'schema:GeoCoordinates'
-                            marriageDate:
-                              '@id': 'https://spdci.org/marriageDate'
-                              '@type': 'xsd:date'
-                            divorceDate:
-                              '@id': 'https://spdci.org/divorceDate'
-                              '@type': 'xsd:date'
-                            parents:
-                              '@id': 'schema:parents'
-                              '@type': 'https://spdci.org/CRVSPerson'
-                        '@id': 'https://spdci.org/CRVSPerson'
+                      $ref: '#/components/schemas/SearchResponse/properties/search_response/items/properties/data/properties/reg_records/items'
                 required:
-                  - reg_record_type
+                  - response_entity
                   - reg_records
               locale:
                 $ref: '#/components/schemas/TxnStatusRequest/properties/txnstatus_request/properties/locale'
