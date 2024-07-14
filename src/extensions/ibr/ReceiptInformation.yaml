@@ -15,4 +15,4 @@ properties:
         @context: https://schema.spdci.org/extensions/ibr/v1/Person.jsonld <br>
         @type: "@context" <br>   
     items:
-      $ref: Person.yaml
+      $ref: Beneficiary.yaml
