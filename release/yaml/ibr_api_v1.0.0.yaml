@@ -263,59 +263,6 @@ paths:
       security:
         - Authorization: []
       deprecated: false
-  /ibr/enrolled:
-    post:
-      summary: /ibr/enrolled
-      description: search programmes person is enrolled in
-      operationId: post_reg_enrolled
-      tags:
-        - sync
-      requestBody:
-        description: ''
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                signature:
-                  $ref: '#/components/schemas/MsgSignature'
-                header:
-                  allOf:
-                    - $ref: '#/components/schemas/MsgHeader_V1.0.0'
-                    - properties:
-                        action:
-                          enum:
-                            - enrolled
-                message:
-                  type: object
-                  description: The search data using which registry search to be performed
-                  oneOf:
-                    - $ref: '#/components/schemas/EnrolledRequest'
-                    - $ref: '#/components/schemas/EncryptedMessage'
-              required:
-                - header
-                - message
-          multipart/form-data:
-            schema:
-              allOf:
-                - $ref: '#/components/schemas/FileInfo'
-                - properties:
-                    action:
-                      enum:
-                        - search
-      responses:
-        '401':
-          $ref: '#/components/responses/HttpErrorResponse'
-        '403':
-          $ref: '#/components/responses/HttpErrorResponse'
-        '500':
-          $ref: '#/components/responses/HttpErrorResponse'
-        default:
-          $ref: '#/components/responses/Response'
-      security:
-        - Authorization: []
-      deprecated: false
   /registry/subscribe:
     post:
       summary: /registry/subscribe
@@ -868,6 +815,59 @@ paths:
       security:
         - Authorization: []
       deprecated: false
+  /registry/enrolled:
+    post:
+      summary: /registry/enrolled
+      description: search programmes person is enrolled in
+      operationId: post_reg_enrolled
+      tags:
+        - Sync
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signature:
+                  $ref: '#/components/schemas/MsgSignature'
+                header:
+                  allOf:
+                    - $ref: '#/components/schemas/MsgHeader_V1.0.0'
+                    - properties:
+                        action:
+                          enum:
+                            - search
+                message:
+                  type: object
+                  description: The search data using which registry search to be performed
+                  oneOf:
+                    - $ref: '#/components/schemas/EnrolledRequest'
+                    - $ref: '#/components/schemas/EncryptedMessage'
+              required:
+                - header
+                - message
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FileInfo'
+                - properties:
+                    action:
+                      enum:
+                        - search
+      responses:
+        '401':
+          $ref: '#/components/responses/HttpErrorResponse'
+        '403':
+          $ref: '#/components/responses/HttpErrorResponse'
+        '500':
+          $ref: '#/components/responses/HttpErrorResponse'
+        default:
+          $ref: '#/components/responses/Response'
+      security:
+        - Authorization: []
+      deprecated: false
   /registry/sync/notify:
     post:
       summary: /registry/sync/notify
@@ -1009,7 +1009,7 @@ components:
               description: |
                 1. Attributes of a person to create fetch records, create verifiable credentials or use in search criteria.
                 2. Allows Country/Registry specific implementation extensions using Attribute Name/Value pairs.
-                @context: https://schema.spdci.org/extensions/ibr/v1/Person.jsonld <br>
+                @context: https://schema.spdci.org/extensions/ibr/v1/Beneficiary.jsonld <br>
                 @type: "@context" <br>   
               items:
                 type: object
@@ -1272,8 +1272,8 @@ components:
                             **Notes:**
                               1. Attribute names defined as per implementation context.
                               2. Usually a list of **enum** values of all possible attribute names.
-                              3. e.g: UIN, YOB, DOB, age, mobile, area-code, pin-code, etc.,
-                          example: YOB
+                              3. e.g: UIN, poverty_score, etc.,
+                          example: poverty_score
                         sort_order:
                           type: string
                           enum:
@@ -1751,11 +1751,31 @@ components:
       properties:
         transaction_id:
           $ref: '#/components/schemas/SearchRequest/properties/transaction_id'
-        receipt_information:
-          $ref: '#/components/schemas/ReceiptRequest/properties/receipt_information'
+        enrolled_criteria:
+          type: object
+          description: |
+            Enrolled query
+          properties:
+            query_type:
+              $ref: '#/components/schemas/SearchRequest/properties/search_request/items/properties/search_criteria/properties/query_type'
+              description: ''
+            response_entity:
+              $ref: '#/components/schemas/NotifyEventRequest/properties/notify_event/items/properties/data/properties/response_entity'
+              example: Beneficiary
+            query:
+              type: object
+              description: Query expression for the enrolled query
+              example: |
+                {
+                  "$and": [
+                    {
+                      "person_identifier": { "eq": "ABC451123" }
+                    }
+                  ]
+                }
       required:
         - transaction_id
-        - receipt_information
+        - enrolled_criteria
     UnSubscribeRequest:
       type: object
       description: Un-Subscribe to registred subscriptions
@@ -2137,7 +2157,7 @@ components:
           format: date-time
           example: ''
         action:
-          description: 'G2P Connect specific action. Usually verb from the URI. Helps in sync, async, store/fwd processing. Helps to identify payload type in message property.'
+          description: 'spdci Connect specific action. Usually verb from the URI. Helps in sync, async, store/fwd processing. Helps to identify payload type in message property.'
           type: string
         sender_id:
           description: |
@@ -2196,7 +2216,7 @@ components:
     MsgSignature:
       type: string
       description: 'Signature of {header}+{message} body verified using sender''s signing public key'
-      example: 'Signature:  namespace="g2p", kidId="{sender_id}|{unique_key_id}|{algorithm}", algorithm="ed25519", created="1606970629", expires="1607030629", headers="(created) (expires) digest", signature="Base64(signing content)'
+      example: 'Signature:  namespace="spdci", kidId="{sender_id}|{unique_key_id}|{algorithm}", algorithm="ed25519", created="1606970629", expires="1607030629", headers="(created) (expires) digest", signature="Base64(signing content)'
   responses:
     HttpErrorResponse:
       description: HTTP layer error details
